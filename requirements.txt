@@ -1,0 +1,12 @@
+sqlalchemy
+flask
+flask-restful
+requests
+gunicorn
+ipaddress
+GitPython
+flask-compress
+gevent
+pymysql
+python-dotenv==1.0.0
+Unidecode==1.3.6

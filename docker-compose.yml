@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+  incriveis_forms_db:
+    image: mariadb
+    restart: always
+    container_name: incriveis_forms_db
+    environment:
+      - MARIADB_ROOT_PASSWORD=123123
+      - MARIADB_USER=admin
+      - MARIADB_PASSWORD=123123
+      - MARIADB_DATABASE=incriveis_forms
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./init_db:/docker-entrypoint-initdb.d
+  incriveis_forms_app:
+    build: .
+    container_name: incriveis_forms_app
+    image: incriveis_forms_app
+    ports:
+      - "5000:5000"
+    restart: always
+    environment:
+      - FLASK_ENV=development
+      - FLASK_APP=main.py
+volumes:
+  db_data:

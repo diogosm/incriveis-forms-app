@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/routes-styles.css') }}" />
+  <title>incriveis-forms - ws api routes</title>
+</head>
+<body>
+
+
+<h2 class="aa_h2">incriveis-forms api routes v 0.1</h2>
+
+<table class="content-table">
+  <thead>
+  <tr>
+    <th>URL</th>
+    <th>Methods</th>
+    <th>Description</th>
+    <th>Parameters</th>
+  </tr>
+  </thead>
+  <tbody>
+  {% for url, methods, doc in route_data %}
+  <tr>
+    {% set doc1 = doc|string %}
+    {% set doc_desc = doc1.split('|')[0] %}
+
+    {% if doc1.split('|')|length > 1 %}
+    {% set doc_params = doc1.split('|')[1] %}
+    {% else %}
+    {% set doc_params = 'Nenhum'|string %}
+    {% endif %}
+
+    <td>{{ url }}</td>
+    <td>{{ methods }}</td>
+    <td>{{ doc_desc|safe }}</td>
+    <td>{{ doc_params|safe }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<div class="">
+  Developed by @diogosm and @mateuxx
+</div>
+
+</body>
+</html>
