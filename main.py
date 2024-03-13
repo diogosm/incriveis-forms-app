@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, url_for
+from flask import Flask, request, jsonify, render_template, url_for, session, redirect
 from flask_compress import Compress
 from dotenv import load_dotenv
 load_dotenv()
@@ -10,6 +10,7 @@ app.config['JSON_AS_ASCII'] = False
 
 # Register the routes
 app.register_blueprint(rotas.bp)
+
 @app.route('/rotas')
 def get_rotas():
     route_data = []
@@ -24,6 +25,15 @@ def get_rotas():
 @app.route('/')
 def get_landpage():
     return render_template('index.html')
+
+@app.route('/login', methods=['GET','POST'])
+##@login_required
+def login():
+    if request.method == 'POST':
+        session['logged_in'] = True
+        return redirect(url_for('get_landpage'))
+    return render_template('controleAcesso/login.html')
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
