@@ -1,29 +1,32 @@
-from flask import Blueprint, request, jsonify, redirect, url_for, session
+from flask import Blueprint, request, jsonify, redirect, url_for, session, render_template
+from flask_login import LoginManager, login_user, UserMixin, login_required, logout_user, current_user
 from dao import dao
 import json
 import pandas as pd
 import io
 from functools import wraps
+from flask_login import (
+    current_user,
+    login_user,
+    logout_user
+)
+
+from flask_dance.contrib.github import github
+from flask_login import LoginManager
+from flask_login import login_required
+from jinja2 import TemplateNotFound
 
 bp = Blueprint('rotas', __name__)
-
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'logged_in' not in session:
-            return redirect(url_for('login', next=request.url))
-        return f(*args, **kwargs)
-    return decorated_function
 
 @bp.route('/uploadCarga', methods=['POST'])
 def upload_carga():
     if request.method == 'POST':
         file = request.files['file']
         option = request.form['option']
-        
+
         # ler o csv do forms
         df = pd.read_csv(io.StringIO(file.read().decode('utf-8')), sep=';')
-        
+
         # Process the CSV data based on the selected option
         # This is a placeholder for your processing logic
         print(f"Tipo questionario: {option}",flush=True)
@@ -43,5 +46,16 @@ def upload_carga():
             print(f"\t\tCategoria 3: {cat3}", flush=True)
 
         return "File uploaded and processed successfully."
+
+
+@bp.route('/index2', methods=['GET'])
+@login_required
+def index2():
+    print('##################################', flush=True)
+    print('ESTOU NA ROTA INDEX2 ###########', flush=True)
+    print('##################################', flush=True)
+    print('Current user: ', current_user.id_usuario, flush=True)
+    print('Current user: ', current_user, flush=True)
+    return render_template('home/index.html', segment='index')
 
 
