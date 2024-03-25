@@ -11,41 +11,44 @@ from flask_login import (
     logout_user
 )
 
+from dotenv import load_dotenv
+load_dotenv()
+from forms.forms import LoginForm
+from utils.utils import verify_pass, hash_pass
+
 from flask_dance.contrib.github import github
 from flask_login import LoginManager
 from flask_login import login_required
 from jinja2 import TemplateNotFound
 
+from database import db
+from models import usuarios
+
 bp = Blueprint('rotas', __name__)
 
-@bp.route('/uploadCarga', methods=['POST'])
+@bp.route('/admin/uploadCargaQuestionario', methods=['GET', 'POST'])
 def upload_carga():
     if request.method == 'POST':
-        file = request.files['file']
-        option = request.form['option']
+        print("Form Data:", flush=True)
+        for key, value in request.form.items():
+            print(f"{key}: {value}", flush=True)
+        print('##########', flush=True)
+
+        upload = request.files['upload']
+        questionario_id = request.form['questionario']
 
         # ler o csv do forms
-        df = pd.read_csv(io.StringIO(file.read().decode('utf-8')), sep=';')
+        df = pd.read_csv(io.StringIO(upload.read().decode('utf-8')))
 
-        # Process the CSV data based on the selected option
-        # This is a placeholder for your processing logic
-        print(f"Tipo questionario: {option}",flush=True)
-        ##print(df.head(),flush=True)
-
-        for index, row in df.iterrows():
-            print(f"Paciente: {row['usuario']}",flush=True)
-            print(flush=True)
-
-            cat1 = row['q1']-1
-            cat2 = row['q2']-1
-            cat3 = row['q3']-1
-
-            print(f"\tPontuacoes por categoria:", flush=True)
-            print(f"\t\tCategoria 1: {cat1}", flush=True)
-            print(f"\t\tCategoria 2: {cat2}", flush=True)
-            print(f"\t\tCategoria 3: {cat3}", flush=True)
+        from services import questionarioService
+        questionarioService.carga_questionario(questionario_id, df)
 
         return "File uploaded and processed successfully."
+    else:
+        from services import questionarioService
+        questionarios = questionarioService.get_questionarios()
+        return render_template('home/carga_questionario.html',
+                               questionarios=questionarios)
 
 
 @bp.route('/index2', methods=['GET'])
@@ -59,3 +62,80 @@ def index2():
     return render_template('home/index.html', segment='index')
 
 
+@bp.route('/admin/home')
+@login_required
+def admin_home():
+    print('User autenticado', flush=True)
+
+
+@bp.route('/admin/login', methods=['GET', 'POST'])
+def login():
+    """For GET requests, display the login form.
+    For POSTS, login the current user by processing the form.
+
+    """
+    print('##################################', flush=True)
+    print('trying login page...', flush=True)
+    print(db, flush=True)
+    print('hashing 123123: ', hash_pass('123123'), flush=True)
+    print('##################################', flush=True)
+
+    login_form = LoginForm(request.form)
+    if 'login' in request.form:
+
+        user_id  = request.form['username']
+        password = request.form['password']
+
+        # Locate user
+        print("## Vou testar: ", user_id, flush=True)
+        #user = Usuario.find_by_username(user_id)
+        # user = dao.find_by_username(user_id)
+        user = Usuarios.query.filter_by(login=user_id).first()
+
+        # if user not found
+        if not user:
+            return render_template( 'accounts/login.html',
+                                    msg='Unknown User or Email',
+                                    form=login_form)
+
+        # Check the password
+        if verify_pass(password, user.senha):
+            dao.autentica_usuario(user.id_usuario)
+            login_user(user)
+            return redirect(url_for('route_default'))
+
+        # Something (user or pass) is not ok
+        return render_template('accounts/login.html',
+                               msg='Wrong user or password',
+                               form=login_form)
+
+    if not current_user.is_authenticated:
+        return render_template('accounts/login.html',
+                               form=login_form)
+    return redirect(url_for('rotas.index2'))
+
+
+@bp.route('/admin/questionario/<int:id>', methods=['GET'])
+# @login_required
+def get_questionario(id):
+    print(f'getting questionario {id}', flush=True)
+
+    from services import questionarioService
+    questionarioService.drop_questionario_first()
+    questionarioService.cria_questionario_dass()
+
+    return render_template('home/template.html',
+                           id=id)
+
+
+@bp.route('/admin/logout')
+@login_required
+def logout():
+    dao.desautentica_usuario(current_user)
+    logout_user() # Log out the user
+    return redirect(url_for('route_default'))
+
+
+@bp.route('/admin/login2')
+def route_default():
+    return redirect(url_for('login'))
