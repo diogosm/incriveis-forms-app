@@ -153,6 +153,23 @@ alter table Resposta
 alter table Questao
     add ordem int not null;
 
+
+rename table Alternativa to alternativa;
+rename table Categoria to categoria;
+rename table Paciente to paciente;
+rename table Questao to questao;
+rename table Questionario to questionario;
+rename table Questionario_Paciente to questionario_paciente;
+rename table Resposta to resposta;
+
+alter table paciente
+    add email varchar(255) not null;
+
+alter table paciente
+    add constraint paciente_pk
+        unique (email);
+
+
 SELECT 'Tabelas dos questionarios criadas!!';
 
 # DELIMITER //
