@@ -7,7 +7,7 @@ from datetime import datetime
 '''
     Aqui importe os models definidos em models, ou seja, os modelos do banco
 '''
-from models.usuario import Usuario
+from models.usuarios import Usuarios
 
 db_str = 'mysql+pymysql://' + \
          os.getenv('DB_USERNAME') + \
@@ -24,7 +24,7 @@ def find_by_username(user_id):
     session = Session()
 
     try:
-        query = session.query(Usuario).filter(Usuario.login == user_id)
+        query = session.query(Usuarios).filter(Usuarios.login == user_id)
         result_size = query.count()
         user = query.first()
 
@@ -43,7 +43,7 @@ def get_user(user_id):
     session = Session()
 
     try:
-        query = session.query(Usuario).filter(Usuario.id_usuario == user_id)
+        query = session.query(Usuarios).filter(Usuarios.id_usuario == user_id)
         result_size = query.count()
         user = query.first()
 
