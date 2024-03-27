@@ -1,22 +1,20 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, func
-from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import UserMixin
 from datetime import datetime
+
+from flask_login import UserMixin
 
 from database import db
 
-class Usuarios(UserMixin, db.Model):
+
+class Usuarios(db.Model, UserMixin):
     id_usuario = db.Column(db.Integer, primary_key=True, autoincrement=True)
     login = db.Column(db.String(255), unique=True)
-    senha = db.Column(db.String(255))
+    senha = db.Column(db.String, nullable=False)
     nome = db.Column(db.String(255))
     date_created = db.Column(db.TIMESTAMP, default=datetime.utcnow)
     date_updated = db.Column(db.TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)
     usuario_created = db.Column(db.Integer, db.ForeignKey('usuarios.id_usuario'), nullable=True)
     usuario_updated = db.Column(db.Integer, db.ForeignKey('usuarios.id_usuario'), nullable=True)
-    authenticated = db.Column(db.Boolean, default=False)
+    # authenticated = db.Column(db.Boolean, default=False)
 
     # created_by = db.relationship('Usuarios', backref='usuarios_created_by', remote_side=[id_usuario])
     # updated_by = db.relationship('Usuarios', backref='usuarios_updated_by', remote_side=[id_usuario])
@@ -39,3 +37,5 @@ class Usuarios(UserMixin, db.Model):
                f"usuario_updated={self.usuario_updated})"
 
 
+    def get_id(self):
+        return self.id_usuario

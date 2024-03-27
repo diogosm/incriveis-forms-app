@@ -20,7 +20,7 @@ services:
     container_name: incriveis_forms_app
     image: incriveis_forms_app
     ports:
-      - "5000:5000"
+      - "15000:5000"
     restart: always
     environment:
       - FLASK_ENV=development

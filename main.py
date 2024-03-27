@@ -1,8 +1,9 @@
 from flask import Flask, request, jsonify, render_template, url_for, session, redirect
 from flask_compress import Compress
 from dotenv import load_dotenv
+
 load_dotenv()
-from routes import rotas
+
 from flask_login import LoginManager, login_user, UserMixin, login_required, logout_user, current_user
 from dao import dao
 from flask_sqlalchemy import SQLAlchemy
@@ -11,7 +12,6 @@ from utils.utils import verify_pass, hash_pass
 from database import db
 import json
 from datetime import timedelta
-
 
 ## importa os models
 # from models.usuario import Usuario
@@ -35,21 +35,29 @@ db.init_app(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'rotas.login'
 
+
 @login_manager.user_loader
 def load_user(user_id):
     return Usuarios.query.get(int(user_id))
+
 
 from models import *
 
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = '/admin/login'
+
+
 @login_manager.user_loader
 def load_user(user_id):
     return dao.get_user(user_id)
 
+
+from routes import rotas
+
 # Register the routes
 app.register_blueprint(rotas.bp)
+
 
 @app.route('/rotas')
 def get_rotas():
@@ -61,6 +69,7 @@ def get_rotas():
             doc = app.view_functions[rule.endpoint].__doc__
             route_data.append((url, methods, doc))
     return render_template('routes.html', route_data=route_data)
+
 
 # @app.route('/')
 # def get_landpage():
