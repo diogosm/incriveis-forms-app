@@ -12,6 +12,8 @@ from flask_login import (
 )
 
 from dotenv import load_dotenv
+
+
 load_dotenv()
 from forms.forms import LoginForm
 from utils.utils import verify_pass, hash_pass
@@ -49,6 +51,20 @@ def upload_carga():
         questionarios = questionarioService.get_questionarios()
         return render_template('home/carga_questionario.html',
                                questionarios=questionarios)
+
+
+
+@bp.route('/pacientes', methods=['GET', 'POST'])
+def pacientes():
+        return render_template('home/pacientes.html')
+
+
+@bp.route('/pacientesData', methods=['GET'])
+def pacientesData():
+    from services import pacienteService
+    patients = pacienteService.get_pacient()  # Fetch all patients from the database
+    patient_data = [patient.to_dict() for patient in patients]  # Convert to list of dictionaries
+    return jsonify(patient_data)  # Return JSON response
 
 
 @bp.route('/index2', methods=['GET'])
