@@ -16,7 +16,7 @@ from flask_login import (
 from dotenv import load_dotenv
 
 load_dotenv()
-from forms.forms import LoginForm
+from forms.forms import *
 from utils.utils import verify_pass, hash_pass
 
 from flask_dance.contrib.github import github
@@ -91,7 +91,7 @@ def login():
     if formLogin.validate_on_submit():
         usuario = Usuarios.query.filter_by(login=formLogin.username.data).first()
         # if usuario and bcrpyt.check_password_hash(usuario.senha, formLogin.password.data):
-        #Ao usar o bcrypt somente quando ja tiver criado o usuario usando o bcrpyt.generate_password_hash
+        # Ao usar o bcrypt somente quando ja tiver criado o usuario usando o bcrpyt.generate_password_hash
         if usuario and usuario.senha == formLogin.password.data:
             login_user(usuario)
         return redirect(url_for("rotas.index2"))
@@ -116,9 +116,37 @@ def get_questionario(id):
 def logout():
     dao.desautentica_usuario(current_user)
     logout_user()  # Log out the user
-    return redirect(url_for('route_default'))
+    return redirect(url_for('rotas.login'))
 
 
 @bp.route('/admin/login2')
 def route_default():
     return redirect(url_for('login'))
+
+
+@bp.route('/admin/cadastro', methods=["GET", "POST"])
+def cadastrar_usuario():
+    formCriarConta = RegisterForm()
+    # só vai rodar caso o usuario submeter, fazer o login
+    if formCriarConta.validate_on_submit():
+        # faz a criptografia em hash para o usuario não tem acesso a essa informação
+        senha = bcrpyt.generate_password_hash(formCriarConta.password.data)
+        # bcrpyt.check_password_hash() -> checa a criptografia -> Retornar uma criptografia -> SEGURANÇA
+        usuario = Usuarios()
+
+        usuario.login = formCriarConta.username.data
+        usuario.senha = senha
+        '''
+        usuario = Usuarios(
+            login=formCriarConta.username.data,
+            senha=senha
+        )
+        '''
+        # adiciona no banco de dados
+        db.session.add(usuario)
+        db.session.commit()
+
+        # fazer login do usuario
+        login_user(usuario, remember=True)
+        return redirect(url_for("rotas.index2"))
+    return render_template("accounts/cadastro_usuario.html", form=formCriarConta)
