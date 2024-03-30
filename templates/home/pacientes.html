@@ -12,7 +12,7 @@
             <div class="col-12">
                 <div class="card my-4">
                     <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-                        <div class="bg-gradient-primary shadow-primary border-radius-lg pt-4 pb-3">
+                        <div class="bg-gradient-primary bg-gradient-info border-radius-lg pt-4 pb-3">
                             <h6 class="text-white text-capitalize ps-3">Tabela de pacientes</h6>
                         </div>
                     </div>
@@ -25,7 +25,7 @@
                                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Email</th>
                                     <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Barra de status</th>
                                     <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status</th>
-                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Primeira atendimento</th>
+                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Primeiro atendimento</th>
                                     <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Ultima atualização</th>
                                     <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Visualizar Questionarios</th>
                                 </tr>
@@ -183,15 +183,32 @@ function createProgressCell(completionValue) {
 
 function createStatusCell(authorData) {
   const cell = document.createElement('td');
-  const cellText = document.createElement('span');
-  cellText.classList.add('text-xs', 'font-weight-bold', 'mb-0');
+  cell.classList.add('align-middle', 'text-center', 'text-sm');
 
-  // Assuming 'status' is the field for status data
-  const statusValue = authorData.status || 'N/A'; // Handle missing data gracefully
-  cellText.textContent = statusValue;
+  const badge = document.createElement('span');
+  badge.classList.add('badge', 'badge-sm');
 
-  cell.classList.add('align-middle', 'text-center');
-  cell.appendChild(cellText);
+  let badgeClass;
+  switch ("bem") { // original code: authorData.status.toLowerCase()
+    case 'bem': // Assuming "bem" translates to "good"
+      badgeClass = 'bg-gradient-success';
+      badge.textContent = 'Bom'; // Change to "Good" if preferred
+      break;
+    case 'razoavel': // Assuming "razoavel" translates to "fair"
+      badgeClass = 'bg-gradient-warning';
+      badge.textContent = 'Razoável'; // Change to "Fair" if preferred
+      break;
+    case 'ruim': // Assuming "ruim" translates to "bad"
+      badgeClass = 'bg-gradient-danger';
+      badge.textContent = 'Ruim'; // Change to "Bad" if preferred
+      break;
+    default:
+      badgeClass = 'bg-gradient-secondary'; // Default (gray)
+      badge.textContent = authorData.status;
+  }
+
+  badge.classList.add(badgeClass);
+  cell.appendChild(badge);
 
   return cell;
 }
