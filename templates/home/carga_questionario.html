@@ -11,19 +11,39 @@
   <div class="container-fluid py-4">
     <div class="row min-vh-80 h-100">
       <div class="col-12">
+        {% if flash_message %}
+            <div class="alert alert-success alert-dismissible text-white" role="alert">
+                <span class="text-sm">
+                    {{ flash_message }}
+                </span>
+                <button type="button" class="btn-close text-lg py-3 opacity-10" data-bs-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+        {% endif %}
+        {% if flash_errors %}
+          <div class="alert alert-danger alert-dismissible text-white" role="alert">
+            <span class="text-sm">
+                {{ flash_errors }}
+            </span>
+              <button type="button" class="btn-close text-lg py-3 opacity-10" data-bs-dismiss="alert" aria-label="Close">
+                  <span aria-hidden="true">×</span>
+              </button>
+          </div>
+        {% endif %}
           <form action="{{ url_for('rotas.upload_carga') }}" method="post" enctype="multipart/form-data">
-              <div class="mb-3">
-                  <label for="questionario" class="form-label">Questionário</label>
-                  <select class="form-select" name="questionario">
+              <div class="input-group input-group-outline my-3">
+                  <label for="questionario" class="ms-0">Questionário</label>
+                      <select class="custom-select d-block w-100" name="questionario">
                       {% for quest in questionarios %}
                           <option value="{{ quest.id }}">{{ quest.nome }}</option>
                       {% endfor %}
                   </select>
               </div>
-              <div class="mb-3">
-                  <label for="upload" class="form-label">Upload de Arquivo</label>
+              <div class="input-group input-group-outline my-3">
+                  <label for="upload" class="ms-0 custom-file-label">Upload de Arquivo</label>
                   <div class="input-group">
-                      <label class="input-group-text" for="upload">Upload</label>
+{#                      <label class="input-group-text" for="upload">Upload</label>#}
                       <input type="file" class="form-control" id="upload" name="upload">
                   </div>
               </div>

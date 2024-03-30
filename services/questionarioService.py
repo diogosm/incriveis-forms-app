@@ -4,10 +4,15 @@ from models.questao import Questao
 from models.alternativa import Alternativa
 from models.paciente import Paciente
 
+from models.questionarioPaciente import QuestionarioPaciente
+from models.resposta import Resposta
+
 from database import db
 
+from sqlalchemy import exc
 from flask import jsonify
 import pandas as pd
+import hashlib
 
 '''
     Funcao de teste para criar o questionario do tipo DASS
@@ -53,9 +58,9 @@ def cria_questionario_dass():
 
     ## cria categorias
     for index_i, categoria in enumerate(["Depressao", "Ansiedade", "Estresse"]):
-        print(f"Index: {index_i}, Category: {categoria}", flush=True)
+        # print(f"Index: {index_i}, Category: {categoria}", flush=True)
 
-        categoria = Categoria(nome=categoria, questionario_id=questionario.id)
+        categoria = Categoria.categoria_ordem(nome=categoria, questionario_id=questionario.id, ordem=index_i)
         db.session.add(categoria)
         db.session.commit()
 
@@ -64,10 +69,13 @@ def cria_questionario_dass():
     print("Categorias salvas:", categorias, flush=True)
 
     for questao_index, texto_questao in questao_texto_map.items():
-        categoria_id = categoria_map[questao_index]
-        categoria_correspondente = next((c for c in categorias if c.id == categoria_id), None)
+        categoria_ordem = categoria_map[questao_index] - 1
+        categoria_correspondente = next((c for c in categorias if c.ordem == categoria_ordem
+                                         and c.questionario_id == questionario.id), None)
+        # print("\tCategoria id: ", categoria_ordem, flush=True)
+        # print("\tCategoria correspo: ", categoria_correspondente, flush=True)
         if categoria_correspondente:
-            print(f"Questão: {texto_questao}, Categoria correspondente: {categoria_correspondente.nome}", flush=True)
+            # print(f"Questão: {texto_questao}, Categoria correspondente: {categoria_correspondente.nome}", flush=True)
             questao = Questao(texto=texto_questao, categoria_id=categoria_correspondente.id, ordem=questao_index)
 
             db.session.add(questao)
@@ -92,19 +100,17 @@ def carga_questionario(questionario_id, pandas_obj):
     questionario = Questionario.query.get(questionario_id)
     df = pandas_obj
 
-    print(df.head(), flush=True)
-    print(df, flush=True)
-
     for index, row in df.iterrows():
         if pd.isnull(row['ID']) or (pd.notnull(row['ID']) and pd.to_numeric(row['ID'], errors='coerce') != row['ID']):
             print("Stopping main loop")
             break
-        print(row, flush=True)
         print('#######################', flush=True)
 
-        respostaParticiapnteHash = hash((row['Endereço de e-mail'], row['Carimbo de data/hora']))
+        encoded_str_key = f"{row['Endereço de e-mail']}{row['Carimbo de data/hora']}"
+        resposta_participante_hash = hashlib.md5(encoded_str_key.encode()).hexdigest()# hash((row['Endereço de e-mail'], row['Carimbo de data/hora']))
         paciente = get_paciente(row['Endereço de e-mail'],
                                 row['Nome:'])
+        questionario_paciente = get_questionario_paciente_by_hash(resposta_participante_hash)
 
         ## @TODO criar uma funcao generica que seja mapeada a chamada de acordo com o tipo quest
         ## pega as questoes desse
@@ -117,20 +123,26 @@ def carga_questionario(questionario_id, pandas_obj):
             1: 2, 3: 2, 6: 2, 8: 2, 14: 2, 18: 2, 19: 2,
             0: 3, 5: 3, 7: 3, 10: 3, 11: 3, 13: 3, 17: 3
         }
+
+        print(f"Adicionando respostas de {paciente.nome}", flush=True)
+        if not questionario_paciente:
+            questionario_paciente = add_questionario_paciente(paciente, questionario_id, resposta_participante_hash)
+
         for column in df.columns[start_q:end_q]:
-            print(f"Coluna : {column}", flush=True)
             question_text = column
-            print(f"{column}: {row[column]}", flush=True)
-
-            print(f"Adding questao {index_col}", flush=True)
             category = category_mapping.get(index_col, -1)
+            questao = get_questao_by_texto(column)
 
-            # question = Question(question_text, category)
-            # # Add the answer to the question
-            # #print(f"Adding answer {row[column]}")
-            # question.answers.append(row[column])
-            # #print(f"Questao added {question.question_text} e res: {question.answers}")
-            # participant.add_question(question)
+            if questao:
+                print(f"\tQuestao found: ", questao.id, ". Categoria: ", questao.categoria.nome, flush=True)
+                ## add resposta
+                resposta = Resposta(paciente_id=paciente.id,
+                                    questao_id=questao.id,
+                                    alternativa_id=get_alternativa_by_questao(questao.id, row[column]).id,
+                                    questionario_paciente_id=questionario_paciente.id)
+                add_resposta(resposta)
+            else:
+                print(f"Questao not found!", flush=True)
 
             index_col+=1
 
@@ -145,7 +157,6 @@ def get_paciente(email, nome):
     paciente = Paciente.query.filter_by(email=email).first()
     if not paciente:
         paciente = Paciente(nome = nome, email = email)
-
         db.session.add(paciente)
         db.session.commit()
     return paciente
@@ -167,30 +178,34 @@ def buscar_questao_por_id_texto(id_questionario, texto_questao):
 def drop_questionario_cascata(questionario_id):
     # Encontrar o questionário pelo ID
     questionario = Questionario.query.get(questionario_id)
-    if not questionario:
-        print("Questionário não encontrado.", flush=True)
-        return
 
-    # Excluir todas as alternativas associadas às questões do questionário
-    for questao in questionario.questoes:
-        for alternativa in questao.alternativas:
-            db.session.delete(alternativa)
+    try:
+        if not questionario:
+            print("Questionário não encontrado.", flush=True)
+            return
 
-    # Excluir todas as questões associadas ao questionário
-    for questao in questionario.questoes:
-        db.session.delete(questao)
+        # Excluir todas as alternativas associadas às questões do questionário
+        for questao in questionario.questoes:
+            for alternativa in questao.alternativas:
+                db.session.delete(alternativa)
 
-    # Excluir todas as categorias associadas ao questionário
-    for categoria in questionario.categorias:
-        db.session.delete(categoria)
+        # Excluir todas as questões associadas ao questionário
+        for questao in questionario.questoes:
+            db.session.delete(questao)
 
-    # Excluir o questionário
-    db.session.delete(questionario)
+        # Excluir todas as categorias associadas ao questionário
+        for categoria in questionario.categorias:
+            db.session.delete(categoria)
 
-    # Commit das alterações no banco de dados
-    db.session.commit()
+        # Excluir o questionário
+        db.session.delete(questionario)
 
-    print("Questionário e todas as suas categorias, questões e alternativas associadas foram excluídas com sucesso.", flush=True)
+        # Commit das alterações no banco de dados
+        db.session.commit()
+
+        print("Questionário e todas as suas categorias, questões e alternativas associadas foram excluídas com sucesso.", flush=True)
+    except Exception as e:
+        print("Falha: ", repr(e), flush=True)
 
 def drop_questionario_first():
     ans = Questionario.query.all()
@@ -201,3 +216,66 @@ def drop_questionario_first():
 
 def get_questionarios():
     return Questionario.query.all()
+
+
+'''
+    Busca categoria pelo id
+'''
+def get_categoria_by_id(id):
+    return Categoria.query.filter_by(id=id).first()
+
+
+'''
+    Busca questao pelo texto
+'''
+def get_questao_by_texto(texto_questao):
+    query = db.session.query(Questao).join(Categoria).join(Questionario)
+    query = query.filter(Questao.texto == texto_questao)
+    return query.first()
+
+
+'''
+    Busca questionario paciente pela chave de busca:
+        (hash((row['Endereço de e-mail'], row['Carimbo de data/hora']))
+'''
+def get_questionario_paciente_by_hash(resposta_participante_hash):
+    return QuestionarioPaciente. \
+            query. \
+            filter_by(busca=resposta_participante_hash). \
+            first()
+
+
+'''
+    Adicionar o questionario paciente para um dado paciente
+    e dado questionario_id e a chave de busca
+    
+'''
+def add_questionario_paciente(paciente, questionario_id, resposta_participante_hash):
+    questionario_paciente = QuestionarioPaciente(paciente_id=paciente.id, questionario_id=questionario_id, busca=resposta_participante_hash)
+    db.session.add(questionario_paciente)
+    try:
+        db.session.commit()
+        return questionario_paciente
+    except exc.SQLAlchemyError as e:
+        db.session.rollback()
+        print(f"Falha no commit: {e}", flush=True)
+    return None
+
+
+'''
+    Retorna a alternativa selecionada da questao dado o valor numerico
+    e o id da questao
+'''
+def get_alternativa_by_questao(questao_id, valor_numerico):
+    return Alternativa.query.filter_by(questao_id=questao_id, valor_numerico=valor_numerico).first()
+
+
+def add_resposta(resposta):
+    db.session.add(resposta)
+    try:
+        db.session.commit()
+        return resposta
+    except exc.SQLAlchemyError as e:
+        db.session.rollback()
+        print(f"Falha no commit: {e}", flush=True)
+    return None

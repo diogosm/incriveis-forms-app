@@ -28,16 +28,18 @@ from database import db
 from models import usuarios, Usuarios
 from senha_cripto import bcrpyt
 
+from services import questionarioService
+
 bp = Blueprint('rotas', __name__)
 
 
 @bp.route('/admin/uploadCargaQuestionario', methods=['GET', 'POST'])
 def upload_carga():
+    questionarios = questionarioService.get_questionarios()
+
     if request.method == 'POST':
-        print("Form Data:", flush=True)
         for key, value in request.form.items():
             print(f"{key}: {value}", flush=True)
-        print('##########', flush=True)
 
         upload = request.files['upload']
         questionario_id = request.form['questionario']
@@ -45,13 +47,12 @@ def upload_carga():
         # ler o csv do forms
         df = pd.read_csv(io.StringIO(upload.read().decode('utf-8')))
 
-        from services import questionarioService
         questionarioService.carga_questionario(questionario_id, df)
 
-        return "File uploaded and processed successfully."
+        return render_template('home/carga_questionario.html',
+                               questionarios=questionarios,
+                               flash_message="Carga feita com sucesso!")
     else:
-        from services import questionarioService
-        questionarios = questionarioService.get_questionarios()
         return render_template('home/carga_questionario.html',
                                questionarios=questionarios)
 
@@ -103,9 +104,8 @@ def login():
 def get_questionario(id):
     print(f'getting questionario {id}', flush=True)
 
-    from services import questionarioService
-    questionarioService.drop_questionario_first()
-    questionarioService.cria_questionario_dass()
+    # questionarioService.drop_questionario_first()
+    # questionarioService.cria_questionario_dass()
 
     return render_template('home/template.html',
                            id=id)
