@@ -12,6 +12,12 @@ O container roda com um volume, se for preciso resetar tudo, use:
 - docker volume rm incriveis_forms_db_data //remove o volume do banco
 - docker inspect --format='{{json .Mounts}}' incriveis_forms_db //verifica o volume
 
+### Para gerar backup do banco
+
+Para gerar backup do banco, rode um comando docker, como esse:
+
+- docker exec incriveis_forms_db mariadb-dump -uadmin -p123123 incriveis_forms > incriveis_forms.sql
+
 ### Build settings
 
 - docker-compose up --build -d
