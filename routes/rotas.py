@@ -150,3 +150,16 @@ def cadastrar_usuario():
         login_user(usuario, remember=True)
         return redirect(url_for("rotas.index2"))
     return render_template("accounts/cadastro_usuario.html", form=formCriarConta)
+
+
+@bp.route('/pacientes', methods=['GET', 'POST'])
+def pacientes():
+    return render_template('home/pacientes.html')
+
+
+@bp.route('/pacientesData', methods=['GET'])
+def pacientesData():
+    from services import pacienteService
+    patients = pacienteService.get_pacient()  # Fetch all patients from the database
+    patient_data = [patient.to_dict() for patient in patients]  # Convert to list of dictionaries
+    return jsonify(patient_data)  # Return JSON response

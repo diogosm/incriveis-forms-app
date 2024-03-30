@@ -1,6 +1,6 @@
 async function populateTable() {
   try {
-    const response = await fetch('http://localhost:5000/pacientesData'); // Replace with your actual API endpoint
+    const response = await fetch('/pacientesData'); // Replace with your actual API endpoint
     console.log(response)
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);

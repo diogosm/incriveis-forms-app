@@ -21,12 +21,13 @@
                             <table class="table align-items-center mb-0">
                                 <thead>
                                 <tr>
-                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Author</th>
-                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Função</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Nome</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Email</th>
                                     <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Barra de status</th>
                                     <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status</th>
                                     <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Primeira atendimento</th>
                                     <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Ultima atualização</th>
+                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Visualizar Questionarios</th>
                                 </tr>
                                 </thead>
                                 <tbody id="authors-table-body">
@@ -50,7 +51,7 @@
     <script>
 async function populateTable() {
   try {
-    const response = await fetch('http://localhost:5000/pacientesData');
+    const response = await fetch('/pacientesData');
     console.log(response)
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -70,6 +71,7 @@ async function populateTable() {
       const statusCell = createStatusCell(authorData);
       const createdDateCell = createCreatedDateCell(authorData.date_created);
       const updatedDateCell = createUpdatedDateCell(authorData.date_updated);
+      const viewQuest = createViewDataCell(authorData);
 
       row.appendChild(authorCell);
       row.appendChild(functionCell);
@@ -77,6 +79,7 @@ async function populateTable() {
       row.appendChild(statusCell);
       row.appendChild(createdDateCell);
       row.appendChild(updatedDateCell);
+      row.appendChild(viewQuest);
 
       authorsTableBody.appendChild(row);
     });
@@ -121,8 +124,8 @@ function createFunctionCell(authorData) {
   functionText.classList.add('text-sm', 'font-weight-bold', 'mb-0');
 
 
-  const functionValue = authorData.funcao || 'N/A'; // Handle missing data gracefully
-  functionText.textContent = `$${functionValue}`; // Assuming function value is a number
+  const functionValue = authorData.email || 'N/A'; // Handle missing data gracefully
+  functionText.textContent = `${functionValue}`; // Assuming function value is a number
 
   cell.appendChild(functionText);
 
@@ -223,6 +226,22 @@ function createUpdatedDateCell(updatedDate) {
   cell.appendChild(cellText);
 
   return cell;
+}
+
+function createViewDataCell(authorData) {
+    const cell = document.createElement('td');
+    const cellText = document.createElement('a');
+    cellText.classList.add('text-xs', 'font-weight-bold', 'mb-0');
+
+    cellText.setAttribute('data-toggle', 'tooltip');
+    cellText.setAttribute('data-original-title', 'Visualizar questionarios do paciente');
+    cellText.textContent = 'Visualizar';
+    cellText.href = `/pacientes/${authorData.id}`;
+
+    cell.classList.add('align-middle', 'text-center');
+    cell.appendChild(cellText);
+
+    return cell;
 }
 
 // Call the function to populate the table
