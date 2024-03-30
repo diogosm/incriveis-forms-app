@@ -111,6 +111,19 @@ def get_questionario(id):
                            id=id)
 
 
+
+@bp.route('/pacientes/<int:id>', methods=['GET'])
+# @login_required
+def get_paciente(id):
+    print(f'getting paciente {id}', flush=True)
+
+    # questionarioService.drop_questionario_first()
+    # questionarioService.cria_questionario_dass()
+
+    return render_template('home/template.html',
+                           id=id)
+
+
 @bp.route('/admin/logout')
 @login_required
 def logout():
