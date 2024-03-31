@@ -120,7 +120,7 @@ def get_paciente(id):
     # questionarioService.drop_questionario_first()
     # questionarioService.cria_questionario_dass()
 
-    return render_template('home/template.html',
+    return render_template('home/paciente.html',
                            id=id)
 
 
