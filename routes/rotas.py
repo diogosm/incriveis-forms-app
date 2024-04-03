@@ -176,3 +176,56 @@ def pacientesData():
     patients = pacienteService.get_pacient()  # Fetch all patients from the database
     patient_data = [patient.to_dict() for patient in patients]  # Convert to list of dictionaries
     return jsonify(patient_data)  # Return JSON response
+
+
+@bp.route('/pacienteQuestionario', methods=['GET'])
+#def paciente_questionario(paciente_id):
+def paciente_questionario():
+    if 'paciente_id' not in request.args or 'busca' not in request.args:
+        return jsonify({"error": "Erro na passagem de parâmetros"}), 400
+
+    paciente_id     = request.args.get('paciente_id', default='', type=int)
+    busca = request.args.get('busca', default='', type=str)
+
+    result = f"Parâmetro 1: {paciente_id}, Parâmetro 2: {busca}"
+    print(f"{result}", flush=True)
+
+    questionarioService.get_questionarios_paciente_respostas(paciente_id, busca)
+
+    # questionarioService.get_questionarios_paciente_respostas(paciente_id)
+    print("#################", flush=True)
+
+
+@bp.route('/teste/criaQuestionario', methods=['GET'])
+def cria_questionario():
+    questionarioService.cria_questionario(
+        'Nome questionario',
+        {
+            'categoria 1': [
+                ('questao 1',
+                 [
+                     ('alternativa 1', 0),
+                     ('alternativa 2', 1),
+                     ('alternativa 3', 2),
+                     ('alternativa 4', 3)
+                 ]),
+                ('questao 2',
+                 [
+                     ('alternativa 1', 0),
+                     ('alternativa 2', 1),
+                     ('alternativa 3', 2),
+                     ('alternativa 4', 3)
+                 ])
+            ],
+            'categoria 2': [
+                ('questao 3',
+                 [
+                     ('alternativa 1', 0),
+                     ('alternativa 2', 1),
+                     ('alternativa 3', 2),
+                     ('alternativa 4', 3)
+                 ])
+            ]
+        }
+    )
+    return 'questionario criado'

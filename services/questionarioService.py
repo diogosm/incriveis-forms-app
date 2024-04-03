@@ -279,3 +279,43 @@ def add_resposta(resposta):
         db.session.rollback()
         print(f"Falha no commit: {e}", flush=True)
     return None
+
+
+def get_questionarios_paciente_respostas(paciente_id, busca):
+    ans = {}
+    questionarios_pacientes = QuestionarioPaciente.query.filter_by(paciente_id=paciente_id, busca=busca).all()
+
+    for qp in questionarios_pacientes:
+        questionario = Questionario.query.get(qp.questionario_id)
+        respostas = Resposta.query.filter_by(questionario_paciente_id=qp.id).all()
+
+        # Adiciona o Questionario e suas Respostas ao dicionário de resultados
+        ans[questionario] = {
+            'questionario_paciente': qp.to_dict(),
+            'respostas': [resposta.to_dict() for resposta in respostas]
+        }
+
+    ## debug
+    for questionario, detalhes in ans.items():
+        print(f"Questionario: {questionario.nome}", flush=True)
+        print(f"QuestionarioPaciente: {detalhes['questionario_paciente']}", flush=True)
+        print("Respostas:", flush=True)
+        for resposta in detalhes['respostas']:
+            print(resposta, flush=True)
+        print("\n", flush=True)
+
+    return ans
+
+
+def cria_questionario(nomeQuestionario, params):
+    print(f"Nome do Questionário: {nomeQuestionario}", flush=True)
+
+    for categoria, questoes in params.items():
+        print(f"Categoria: {categoria}", flush=True)
+
+        for questao, alternativas in questoes:
+            print(f"Questão: {questao}", flush=True)
+            for alternativa, _ in alternativas:
+                print(f"Alternativa: {alternativa}", flush=True)
+
+        print("\n", flush=True)
