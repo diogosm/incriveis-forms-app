@@ -29,6 +29,7 @@ from models import usuarios, Usuarios
 from senha_cripto import bcrpyt
 
 from services import questionarioService
+from services import pacienteService
 
 bp = Blueprint('rotas', __name__)
 
@@ -105,7 +106,7 @@ def get_questionario(id):
     print(f'getting questionario {id}', flush=True)
 
     # questionarioService.drop_questionario_first()
-    # questionarioService.cria_questionario_dass()
+    questionarioService.cria_questionario_dass()
 
     return render_template('home/template.html',
                            id=id)
@@ -115,7 +116,6 @@ def get_questionario(id):
 @bp.route('/pacientes/<int:id>', methods=['GET'])
 # @login_required
 def get_paciente(id):
-    print(f'getting paciente {id}', flush=True)
 
     # questionarioService.drop_questionario_first()
     # questionarioService.cria_questionario_dass()
@@ -172,7 +172,6 @@ def pacientes():
 
 @bp.route('/pacientesData', methods=['GET'])
 def pacientesData():
-    from services import pacienteService
     patients = pacienteService.get_pacient()  # Fetch all patients from the database
     patient_data = [patient.to_dict() for patient in patients]  # Convert to list of dictionaries
     return jsonify(patient_data)  # Return JSON response
@@ -187,13 +186,21 @@ def paciente_questionario():
     paciente_id     = request.args.get('paciente_id', default='', type=int)
     busca = request.args.get('busca', default='', type=str)
 
-    result = f"Parâmetro 1: {paciente_id}, Parâmetro 2: {busca}"
-    print(f"{result}", flush=True)
+    ans = questionarioService.get_questionarios_paciente_respostas(paciente_id, busca)
 
-    questionarioService.get_questionarios_paciente_respostas(paciente_id, busca)
+    primeira_chave = next(iter(ans))
+    primeiro_questionario = ans[primeira_chave]
+    categorias = questionarioService.get_categoria_by_questionario(primeiro_questionario['questionario_paciente']['questionario_id'])
+    escores = questionarioService.get_escore_by_questionario_paciente(busca)
+    paciente = pacienteService.get_pacient_by_id(paciente_id)
 
     # questionarioService.get_questionarios_paciente_respostas(paciente_id)
     print("#################", flush=True)
+    return render_template('home/questionario_paciente.html',
+                           ans=ans,
+                           categorias=categorias,
+                           escores=escores,
+                           paciente=paciente)
 
 
 @bp.route('/teste/criaQuestionario', methods=['GET'])

@@ -1,0 +1,51 @@
+.questao {
+    max-width: 200px;
+    overflow-wrap: break-word; /* Quebra de palavras para evitar overflow */
+    word-wrap: break-word;
+    white-space: normal !important;
+}
+
+/* Ajuste para telas menores */
+@media (max-width: 600px) {
+    .questao {
+        max-width: 150px;
+        white-space: normal !important;
+    }
+}
+
+.nivel-Normal {
+    background-color: #12dc12 !important; /* Verde claro */
+    color: white;
+}
+
+.nivel-Leve {
+    background-color: #90e770 !important; /* Azul claro */
+    color: black;
+}
+
+.nivel-Moderado {
+    background-color: #dcc53b !important; /* Azul claro */
+    color: black;
+}
+
+.nivel-Severo {
+    background-color: #e85e5e !important; /* Azul claro */
+    color: white;
+}
+
+.nivel-Extremamente-severo {
+    background-color: #fc4f14 !important; /* Vermelho */
+    color: white;
+}
+
+td:hover {
+    background-color: #63B3ED !important;
+}
+
+tr:hover td {
+    background-color: #63B3ED !important;
+}
+
+tbody > tr:nth-child(odd) {
+    background-color: #f0f2f5 !important; /* Cinza claro */
+}

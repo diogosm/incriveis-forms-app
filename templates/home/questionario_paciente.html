@@ -1,0 +1,119 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Template {% endblock %} 
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+
+    <div class="container-fluid mt-4">
+        <div class="row mt-4">
+            <div class="card">
+                <div class="row gx-4 mb-2">
+                    <div class="col-auto">
+                        <div class="avatar avatar-xl position-relative"><img
+                                src="/static/assets/images/user/avatar-1.jpg" alt="profile_image"
+                                class="w-100 border-radius-lg shadow-sm"></div>
+                    </div>
+                    <div class="col-auto my-auto">
+                        <div class="h-100"><h5 class="mb-1"> {{ paciente.nome }} </h5>
+                            <p class="mb-0 font-weight-normal text-sm"> Perfil do paciente </p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="card">
+                <div class="table-responsive p-0">
+                    <table class="table align-items-center justify-content-center mb-0">
+                        <thead>
+                        {% set p_quest = ans|dictsort(false, 'key')|first %}
+                        {% set p_resp = p_quest[1].respostas|first %}
+                        <tr>
+                            <th></th>
+                            {% for alternativa in p_resp.alternativa_size %}
+                                <th class="questao">{{ alternativa }}</th>
+                            {% endfor %}
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for questionario, detalhes in ans.items() %}
+                            {% for resposta in detalhes['respostas'] %}
+                                <tr>
+                                    {% for i in range(p_resp.alternativa_size|length + 1) %}
+                                        {% if i == 0 %}
+                                            <td class="questao">{{ resposta.questao }}</td>
+                                        {% else %}
+                                            {% if resposta.alternativa == i - 1 %}
+                                                <td>{{ resposta.alternativa }}</td>
+                                            {% else %}
+                                                <td>-</td>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="card">
+                <div class="table-responsive p-0">
+                    <table class="table align-items-center justify-content-center mb-0">
+                        <thead>
+                        {% set p_quest = ans|dictsort(false, 'key')|first %}
+                        {% set p_resp = p_quest[1].respostas|first %}
+                        <tr>
+                            <th></th>
+                            <th>Escore</th>
+                            <th>Escore Médio</th>
+                            <th>Classificação</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for categoria in categorias %}
+                            <tr>
+                                <td>{{ categoria.nome }}</td>
+                                <td>{{ escores[categoria.id][0] }}</td>
+                                <td></td>
+                                <td class="nivel-{{ escores[categoria.id][1].replace(' ', '-') }}">{{ escores[categoria.id][1] }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% for categoria in categorias %}
+            <div class="row mt-4">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col-md-8 d-flex align-items-center"><h6 class="mb-0">
+                                Interpretação Sintomas <b>{{ categoria.nome }}</b>
+                            </h6></div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-sm">
+                            Texto interpret
+                        </p>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+
+    {% include 'includes/footer.html' %}
+
+  </div>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}

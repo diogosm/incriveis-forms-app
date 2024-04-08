@@ -6,6 +6,9 @@ from models.paciente import Paciente
 
 from models.questionarioPaciente import QuestionarioPaciente
 from models.resposta import Resposta
+from models.resultadoQuestionarioPacienteCateg import ResultadoQuestionarioPacienteCateg
+
+from services import escoreQuestionarioService
 
 from database import db
 
@@ -19,7 +22,7 @@ import hashlib
 '''
 def cria_questionario_dass():
     ## Cria o questionario DASS
-    questionario = Questionario(nome="DASS")
+    questionario = Questionario(nome="DASS - versao_processa_categorias_na_carga")
     db.session.add(questionario)
     db.session.commit()
 
@@ -125,26 +128,48 @@ def carga_questionario(questionario_id, pandas_obj):
         }
 
         print(f"Adicionando respostas de {paciente.nome}", flush=True)
+        ## apenas adiciona se nao existir
         if not questionario_paciente:
             questionario_paciente = add_questionario_paciente(paciente, questionario_id, resposta_participante_hash)
 
-        for column in df.columns[start_q:end_q]:
-            question_text = column
-            category = category_mapping.get(index_col, -1)
-            questao = get_questao_by_texto(column)
+            for column in df.columns[start_q:end_q]:
+                question_text = column
+                category = category_mapping.get(index_col, -1)
+                questao = get_questao_by_texto(column)
 
-            if questao:
-                print(f"\tQuestao found: ", questao.id, ". Categoria: ", questao.categoria.nome, flush=True)
-                ## add resposta
-                resposta = Resposta(paciente_id=paciente.id,
-                                    questao_id=questao.id,
-                                    alternativa_id=get_alternativa_by_questao(questao.id, row[column]).id,
-                                    questionario_paciente_id=questionario_paciente.id)
-                add_resposta(resposta)
-            else:
-                print(f"Questao not found!", flush=True)
+                if questao:
+                    print(f"\tQuestao found: ", questao.id, ". Categoria: ", questao.categoria.nome, flush=True)
+                    ## add resposta
+                    resposta = Resposta(paciente_id=paciente.id,
+                                        questao_id=questao.id,
+                                        alternativa_id=get_alternativa_by_questao(questao.id, row[column]).id,
+                                        questionario_paciente_id=questionario_paciente.id)
+                    add_resposta(resposta)
+                else:
+                    print(f"Questao not found!", flush=True)
 
-            index_col+=1
+                index_col+=1
+        else:
+            print(f"\tQuestionário já existente de {paciente.nome}!", flush=True)
+
+            categorias = get_categorias_by_questionario(questionario_paciente.questionario_id)
+            ## se já existem as respostas, verifico se o calculo dos escores ja esta feito
+            for categoria in categorias:
+                print(f"\t\tVerificando {categoria.nome}...", flush=True)
+                res = get_resultado_by_questionario_and_categoria(questionario_paciente.id, categoria.id)
+                if not res:
+                    print(f"\t\t\tNao existe", flush=True)
+                    ## se nao exisitr calcula
+                    escore = calc_escore(categoria.id,
+                                         questionario_paciente.id)
+
+                    res = ResultadoQuestionarioPacienteCateg(escore, categoria.id, questionario_paciente.id)
+                    if add_resultado(res):
+                        print(f"Escore salvo com sucesso", flush=True)
+                    else:
+                        print(f"\t\t\t\tErro ao salvar escore", flush=True)
+                else:
+                    print(f"\t\t\tJá existe uma resposta para esta categoria", flush=True)
 
 
 '''
@@ -174,6 +199,98 @@ def buscar_questao_por_id_texto(id_questionario, texto_questao):
 
     # Retorna a questão encontrada ou None se não encontrada
     return query.first()
+
+
+'''
+    Funcao que busca uma questao dado id da questao
+'''
+def get_questao_by_id(id_questao):
+    return Questao.query.get(id_questao)
+
+
+'''
+    Funcao que busca uma questao dado id da alternativa
+'''
+def get_alternativa_by_id(id_alternativa):
+    return Alternativa.query.get(id_alternativa)
+
+
+'''
+    Funcao que busca as alternativas por questao
+'''
+def get_alternativa_size_by_questao_id(id_questao):
+    return Alternativa.query.filter_by(questao_id=id_questao).all()
+
+
+'''
+    Funcao que busca os resultados por categoria de cada paciente
+'''
+def get_resultado_by_questionario_and_categoria(id_questionario_paciente, id_categoria):
+    return (ResultadoQuestionarioPacienteCateg. \
+            query. \
+            filter_by(questionario_paciente_id=id_questionario_paciente,
+                      categoria_id=id_categoria). \
+            all())
+
+
+'''
+    Funcao que retornas as categorias de um questionario_id
+'''
+def get_categorias_by_questionario(id_questionario):
+    return (Categoria. \
+            query. \
+            filter_by(questionario_id=id_questionario). \
+            all())
+
+
+'''
+    Funcao que calcula o score
+    params:
+    
+'''
+def calc_escore(categoria_id, questionario_paciente_id):
+    sum_valor_numerico = db.session.query(db.func.sum(Alternativa.valor_numerico)). \
+        join(Resposta, Resposta.alternativa_id == Alternativa.id). \
+        join(Questao, Resposta.questao_id == Questao.id). \
+        join(Categoria, Questao.categoria_id == Categoria.id). \
+        join(Paciente, Resposta.paciente_id == Paciente.id). \
+        filter(Resposta.questionario_paciente_id == questionario_paciente_id, Categoria.id == categoria_id). \
+        scalar()
+    print(f"\t\t\tResultado do escore {sum_valor_numerico}", flush=True)
+    return sum_valor_numerico
+
+
+'''
+    Salva resultado no banco
+'''
+def add_resultado(resultado):
+    db.session.add(resultado)
+    try:
+        db.session.commit()
+        return resultado
+    except exc.SQLAlchemyError as e:
+        db.session.rollback()
+        print(f"Falha no commit: {e}", flush=True)
+    return None
+
+
+def get_escore_by_questionario_paciente(busca):
+    questionarioPaciente = get_questionario_paciente_by_hash(busca)
+    if questionarioPaciente:
+        query = db.session.query(ResultadoQuestionarioPacienteCateg.categoria_id, ResultadoQuestionarioPacienteCateg.escore, ResultadoQuestionarioPacienteCateg.questionario_paciente_id) \
+            .join(Categoria, ResultadoQuestionarioPacienteCateg.categoria_id == Categoria.id) \
+            .filter(ResultadoQuestionarioPacienteCateg.questionario_paciente_id == questionarioPaciente.id).all()
+        escore_por_categoria = {}
+        for categoria_id, escore, questionario_paciente_id in query:
+            escore_por_categoria[categoria_id] = [escore,
+                                                  escoreQuestionarioService.get_classificacao(
+                                                      escore,
+                                                      categoria_id
+                                                  )]
+        print(escore_por_categoria, flush=True)
+        return escore_por_categoria
+    else:
+        return None
 
 def drop_questionario_cascata(questionario_id):
     # Encontrar o questionário pelo ID
@@ -289,10 +406,25 @@ def get_questionarios_paciente_respostas(paciente_id, busca):
         questionario = Questionario.query.get(qp.questionario_id)
         respostas = Resposta.query.filter_by(questionario_paciente_id=qp.id).all()
 
+        # busca a questao
+        respostas_com_questao = []
+        for resposta in respostas:
+            resposta_dict = resposta.to_dict()
+
+            questao = get_questao_by_id(resposta.questao_id)
+            alternativa = get_alternativa_by_id(resposta.alternativa_id)
+            alternativa_size = get_alternativa_size_by_questao_id(resposta.questao_id)
+
+            resposta_dict['questao'] = questao.texto
+            resposta_dict['alternativa'] = alternativa.valor_numerico
+            resposta_dict['alternativa_size'] = [alternativa_aux.texto for alternativa_aux in alternativa_size]
+
+            respostas_com_questao.append(resposta_dict)
+
         # Adiciona o Questionario e suas Respostas ao dicionário de resultados
         ans[questionario] = {
             'questionario_paciente': qp.to_dict(),
-            'respostas': [resposta.to_dict() for resposta in respostas]
+            'respostas': respostas_com_questao
         }
 
     ## debug
@@ -306,6 +438,9 @@ def get_questionarios_paciente_respostas(paciente_id, busca):
 
     return ans
 
+
+def get_categoria_by_questionario(questionario_id):
+    return Categoria.query.filter_by(questionario_id=questionario_id).all()
 
 def cria_questionario(nomeQuestionario, params):
     print(f"Nome do Questionário: {nomeQuestionario}", flush=True)
