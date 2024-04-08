@@ -106,13 +106,15 @@ def login():
 @bp.route('/admin/cadastro', methods=['GET', 'POST'])
 def criar_usuario():
     formCriarUsuario = RegisterForm()
+    print(formCriarUsuario.is_submitted(),flush=True)
+    print(formCriarUsuario.validate_on_submit(None), flush=True)
     if formCriarUsuario.validate_on_submit():
         # senha = bcrpyt.generate_password_hash(formCriarUsuario.senha.data)
         usuario = Usuarios()
         usuario.nome = formCriarUsuario.nome.data
         usuario.senha = formCriarUsuario.senha.data
         usuario.login = formCriarUsuario.login.data
-        print(usuario, flush=True)
+        print("QUALQUWR COISA", flush=True)
         db.session.add(usuario)
         db.session.commit()
         print('User criado com sucesso', flush=True)

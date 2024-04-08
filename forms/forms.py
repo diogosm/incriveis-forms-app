@@ -15,14 +15,14 @@ class LoginForm(FlaskForm):
 
 class RegisterForm(FlaskForm):
     login = StringField('Username',
-                        id='username_login',
+                        id='login',
                         validators=[DataRequired()])
     nome = StringField('Nome do Usuario',
                        validators=[DataRequired()])
 
     senha = PasswordField('Password',
-                          id='pwd_login',
+                          id='senha',
                           validators=[DataRequired()])
 
-    confirmacao_senha = PasswordField("Confirmação de Senha", validators=[DataRequired(), EqualTo("senha")])
+    confirmacao_senha = PasswordField("Confirmação de Senha", id='confirmacao_senha',validators=[DataRequired()])
 
