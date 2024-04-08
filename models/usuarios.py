@@ -23,9 +23,9 @@ class Usuarios(db.Model, UserMixin):
 
 
     def __init__(self):
-        #self.login = login
-        #self.senha = senha
-        #self.nome = nome
+        self.login = Usuarios.login
+        self.senha = Usuarios.senha
+        self.nome = Usuarios.nome
         self.date_created = datetime.now()
         self.date_updated = datetime.now()
     def __repr__(self):

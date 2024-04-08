@@ -1,3 +1,4 @@
+import bcrypt
 from flask import Blueprint, request, jsonify, redirect, url_for, session, render_template
 from flask_login import LoginManager, login_user, UserMixin, login_required, logout_user, current_user
 
@@ -91,13 +92,31 @@ def login():
 
     formLogin = LoginForm()
     if formLogin.validate_on_submit():
+
         usuario = Usuarios.query.filter_by(login=formLogin.username.data).first()
         # if usuario and bcrpyt.check_password_hash(usuario.senha, formLogin.password.data):
         # Ao usar o bcrypt somente quando ja tiver criado o usuario usando o bcrpyt.generate_password_hash
         if usuario and usuario.senha == formLogin.password.data:
             login_user(usuario)
+            print("Login sucessful", flush=True)
         return redirect(url_for("rotas.index2"))
     return render_template('accounts/login.html', form=formLogin)
+
+
+@bp.route('/admin/cadastro', methods=['GET', 'POST'])
+def criar_usuario():
+    formCriarUsuario = RegisterForm()
+    if formCriarUsuario.validate_on_submit():
+        # senha = bcrpyt.generate_password_hash(formCriarUsuario.senha.data)
+        usuario = Usuarios()
+        usuario.nome = formCriarUsuario.nome.data
+        usuario.senha = formCriarUsuario.senha.data
+        usuario.login = formCriarUsuario.login.data
+        print(usuario, flush=True)
+        db.session.add(usuario)
+        db.session.commit()
+        print('User criado com sucesso', flush=True)
+    return render_template('home/cadastro_usuario.html', form=formCriarUsuario)
 
 
 @bp.route('/admin/questionario/<int:id>', methods=['GET'])
@@ -112,11 +131,9 @@ def get_questionario(id):
                            id=id)
 
 
-
 @bp.route('/pacientes/<int:id>', methods=['GET'])
 # @login_required
 def get_paciente(id):
-
     # questionarioService.drop_questionario_first()
     # questionarioService.cria_questionario_dass()
 
@@ -137,32 +154,32 @@ def route_default():
     return redirect(url_for('login'))
 
 
-@bp.route('/admin/cadastro', methods=["GET", "POST"])
-def cadastrar_usuario():
-    formCriarConta = RegisterForm()
-    # só vai rodar caso o usuario submeter, fazer o login
-    if formCriarConta.validate_on_submit():
-        # faz a criptografia em hash para o usuario não tem acesso a essa informação
-        senha = bcrpyt.generate_password_hash(formCriarConta.password.data)
-        # bcrpyt.check_password_hash() -> checa a criptografia -> Retornar uma criptografia -> SEGURANÇA
-        usuario = Usuarios()
-
-        usuario.login = formCriarConta.username.data
-        usuario.senha = senha
-        '''
-        usuario = Usuarios(
-            login=formCriarConta.username.data,
-            senha=senha
-        )
-        '''
-        # adiciona no banco de dados
-        db.session.add(usuario)
-        db.session.commit()
-
-        # fazer login do usuario
-        login_user(usuario, remember=True)
-        return redirect(url_for("rotas.index2"))
-    return render_template("accounts/cadastro_usuario.html", form=formCriarConta)
+# @bp.route('/admin/cadastro', methods=["GET", "POST"])
+# def cadastrar_usuario():
+#     formCriarConta = RegisterForm()
+#     # só vai rodar caso o usuario submeter, fazer o login
+#     if formCriarConta.validate_on_submit():
+#         # faz a criptografia em hash para o usuario não tem acesso a essa informação
+#         senha = bcrpyt.generate_password_hash(formCriarConta.password.data)
+#         # bcrpyt.check_password_hash() -> checa a criptografia -> Retornar uma criptografia -> SEGURANÇA
+#         usuario = Usuarios()
+#
+#         usuario.login = formCriarConta.username.data
+#         usuario.senha = senha
+#         '''
+#         usuario = Usuarios(
+#             login=formCriarConta.username.data,
+#             senha=senha
+#         )
+#         '''
+#         # adiciona no banco de dados
+#         db.session.add(usuario)
+#         db.session.commit()
+#
+#         # fazer login do usuario
+#         login_user(usuario, remember=True)
+#         return redirect(url_for("rotas.index2"))
+#     return render_template("accounts/.html", form=formCriarConta)
 
 
 @bp.route('/pacientes', methods=['GET', 'POST'])
@@ -178,19 +195,20 @@ def pacientesData():
 
 
 @bp.route('/pacienteQuestionario', methods=['GET'])
-#def paciente_questionario(paciente_id):
+# def paciente_questionario(paciente_id):
 def paciente_questionario():
     if 'paciente_id' not in request.args or 'busca' not in request.args:
         return jsonify({"error": "Erro na passagem de parâmetros"}), 400
 
-    paciente_id     = request.args.get('paciente_id', default='', type=int)
+    paciente_id = request.args.get('paciente_id', default='', type=int)
     busca = request.args.get('busca', default='', type=str)
 
     ans = questionarioService.get_questionarios_paciente_respostas(paciente_id, busca)
 
     primeira_chave = next(iter(ans))
     primeiro_questionario = ans[primeira_chave]
-    categorias = questionarioService.get_categoria_by_questionario(primeiro_questionario['questionario_paciente']['questionario_id'])
+    categorias = questionarioService.get_categoria_by_questionario(
+        primeiro_questionario['questionario_paciente']['questionario_id'])
     escores = questionarioService.get_escore_by_questionario_paciente(busca)
     paciente = pacienteService.get_pacient_by_id(paciente_id)
 
