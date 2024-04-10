@@ -3,7 +3,9 @@
 {% block title %} Template {% endblock %}
 
 <!-- Specific Page CSS goes HERE  -->
-{% block stylesheets %}{% endblock stylesheets %}
+{% block stylesheets %}
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/material-dashboard.min.css') }}">
+{% endblock stylesheets %}
 
 {% block content %}
 
@@ -16,18 +18,42 @@
                             <h6 class="text-white text-capitalize ps-3">Tabela de pacientes</h6>
                         </div>
                     </div>
+
                     <div class="card-body px-0 pb-2">
                         <div class="table-responsive p-0">
+                            <div class="d-flex justify-content-between mx-3">
+                                <div class="flex-grow-1 me-2">
+                                    <input id="searchInput" placeholder="Buscar paciente" type="text">
+
+                                </div>
+                                <div>
+                                    <a href="./new-product.html" class="btn btn-sm btn-primary">+ Adicionar Paciente</a>
+                                </div>
+                            </div>
                             <table class="table align-items-center mb-0">
                                 <thead>
                                 <tr>
-                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Nome</th>
-                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Email</th>
-                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Barra de status</th>
-                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status</th>
-                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Primeiro atendimento</th>
-                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Ultima atualização</th>
-                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Visualizar Questionarios</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                        Nome
+                                    </th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                                        Email
+                                    </th>
+                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                        Barra de status
+                                    </th>
+                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                        Status
+                                    </th>
+                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                        Primeiro atendimento
+                                    </th>
+                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                        Ultima atualização
+                                    </th>
+                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                        Visualizar Questionarios
+                                    </th>
                                 </tr>
                                 </thead>
                                 <tbody id="authors-table-body">
@@ -49,219 +75,230 @@
 <!-- Specific Page JS goes HERE  -->
 {% block javascripts %}
     <script>
-async function populateTable() {
-  try {
-    const response = await fetch('/pacientesData');
-    console.log(response)
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+        async function populateTable(searchQuery = '') {
+            try {
+                const response = await fetch('/pacientesData');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
 
-    const authorsData = await response.json();
+                const authorsData = await response.json();
 
-    const authorsTableBody = document.getElementById('authors-table-body');
+                const authorsTableBody = document.getElementById('authors-table-body');
 
-    authorsData.forEach(authorData => {
-      const row = document.createElement('tr');
+                // Clear existing table rows
+                authorsTableBody.innerHTML = '';
 
-      // Create table cells based on author data
-      const authorCell = createAuthorCell(authorData);
-      const functionCell = createFunctionCell(authorData);
-      const progessCell = createProgressCell(authorData);
-      const statusCell = createStatusCell(authorData);
-      const createdDateCell = createCreatedDateCell(authorData.date_created);
-      const updatedDateCell = createUpdatedDateCell(authorData.date_updated);
-      const viewQuest = createViewDataCell(authorData);
+                authorsData.forEach(authorData => {
+                    // Check if the search query matches the author's name
+                    if (authorData.nome.toLowerCase().includes(searchQuery.toLowerCase())) {
+                        const row = document.createElement('tr');
 
-      row.appendChild(authorCell);
-      row.appendChild(functionCell);
-      row.appendChild(progessCell);
-      row.appendChild(statusCell);
-      row.appendChild(createdDateCell);
-      row.appendChild(updatedDateCell);
-      row.appendChild(viewQuest);
+                        // Create table cells based on author data
+                        const authorCell = createAuthorCell(authorData);
+                        const functionCell = createFunctionCell(authorData);
+                        const progessCell = createProgressCell(authorData);
+                        const statusCell = createStatusCell(authorData);
+                        const createdDateCell = createCreatedDateCell(authorData.date_created);
+                        const updatedDateCell = createUpdatedDateCell(authorData.date_updated);
+                        const viewQuest = createViewDataCell(authorData);
 
-      authorsTableBody.appendChild(row);
-    });
-  } catch (error) {
-    console.error('Error fetching data:', error);
-    // Handle errors, display an error message to the user
-  }
-}
+                        row.appendChild(authorCell);
+                        row.appendChild(functionCell);
+                        row.appendChild(progessCell);
+                        row.appendChild(statusCell);
+                        row.appendChild(createdDateCell);
+                        row.appendChild(updatedDateCell);
+                        row.appendChild(viewQuest);
 
-function createAuthorCell(authorData) {
-  const cell = document.createElement('td');
+                        authorsTableBody.appendChild(row);
+                    }
+                });
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                // Handle errors, display an error message to the user
+            }
+        }
 
-  // Assuming 'nome' is the author name in your data structure
-  const authorName = authorData.nome || 'N/A'; // Handle missing data gracefully
+        function createAuthorCell(authorData) {
+            const cell = document.createElement('td');
 
-  const authorContent = document.createElement('div');
-  authorContent.classList.add('d-flex', 'px-2', 'py-1');
-/*
-  const authorImage = document.createElement('img');
-  authorImage.classList.add('avatar', 'avatar-sm', 'rounded-circle', 'me-2');
-  authorImage.src = '../assets/img/small-logos/default-avatar.svg'; // Replace with default avatar path or logic to use specific image based on data
-*/
-  const authorDetails = document.createElement('div');
-  authorDetails.classList.add('my-auto');
+            // Assuming 'nome' is the author name in your data structure
+            const authorName = authorData.nome || 'N/A'; // Handle missing data gracefully
 
-  const authorNameElement = document.createElement('h6');
-  authorNameElement.classList.add('mb-0', 'text-sm');
-  authorNameElement.textContent = authorName;
+            const authorContent = document.createElement('div');
+            authorContent.classList.add('d-flex', 'px-2', 'py-1');
+            /*
+              const authorImage = document.createElement('img');
+              authorImage.classList.add('avatar', 'avatar-sm', 'rounded-circle', 'me-2');
+              authorImage.src = '../assets/img/small-logos/default-avatar.svg'; // Replace with default avatar path or logic to use specific image based on data
+            */
+            const authorDetails = document.createElement('div');
+            authorDetails.classList.add('my-auto');
 
-  authorDetails.appendChild(authorNameElement);
-  //authorContent.appendChild(authorImage);
-  authorContent.appendChild(authorDetails);
+            const authorNameElement = document.createElement('h6');
+            authorNameElement.classList.add('mb-0', 'text-sm');
+            authorNameElement.textContent = authorName;
 
-  cell.appendChild(authorContent);
+            authorDetails.appendChild(authorNameElement);
+            //authorContent.appendChild(authorImage);
+            authorContent.appendChild(authorDetails);
 
-  return cell;
-}
+            cell.appendChild(authorContent);
 
-function createFunctionCell(authorData) {
-  const cell = document.createElement('td');
-  const functionText = document.createElement('p');
-  functionText.classList.add('text-sm', 'font-weight-bold', 'mb-0');
+            return cell;
+        }
 
-
-  const functionValue = authorData.email || 'N/A'; // Handle missing data gracefully
-  functionText.textContent = `${functionValue}`; // Assuming function value is a number
-
-  cell.appendChild(functionText);
-
-  return cell;
-}
+        function createFunctionCell(authorData) {
+            const cell = document.createElement('td');
+            const functionText = document.createElement('p');
+            functionText.classList.add('text-sm', 'font-weight-bold', 'mb-0');
 
 
-function createProgressCell(completionValue) {
-    completionValue = 100 //Placeholder #TODO
-  const cell = document.createElement('td');
-  cell.classList.add('align-middle', 'text-center');
+            const functionValue = authorData.email || 'N/A'; // Handle missing data gracefully
+            functionText.textContent = `${functionValue}`; // Assuming function value is a number
 
-  const progressContainer = document.createElement('div');
-  progressContainer.classList.add('d-flex', 'align-items-center', 'justify-content-center');
+            cell.appendChild(functionText);
 
-  const progressPercentage = document.createElement('span');
-  progressPercentage.classList.add('me-2', 'text-xs', 'font-weight-bold');
-  progressPercentage.textContent = `${completionValue}%`;
-
-  const progressDiv = document.createElement('div');
-
-  const progressBar = document.createElement('div');
-  progressBar.classList.add('progress');
-
-  const progressBarValue = document.createElement('div');
-
-  // Set progress bar color based on completion value
-  let progressBarClass;
-  if (completionValue >= 80) {
-    progressBarClass = 'bg-gradient-success'; // Done (green)
-  } else if (completionValue > 50 && completionValue < 80) {
-    progressBarClass = 'bg-gradient-info'; // Working (blue)
-  } else {
-    progressBarClass = 'bg-gradient-danger'; // Canceled (red)
-  }
-
-  progressBarValue.classList.add('progress-bar', progressBarClass);
-  progressBarValue.setAttribute('role', 'progressbar');
-  progressBarValue.setAttribute('aria-valuenow', completionValue);
-  progressBarValue.setAttribute('aria-valuemin', '0');
-  progressBarValue.setAttribute('aria-valuemax', '100');
-  progressBarValue.style.width = `${completionValue}%`;
-
-  progressBar.appendChild(progressBarValue);
-  progressDiv.appendChild(progressBar);
-
-  progressContainer.appendChild(progressPercentage);
-  progressContainer.appendChild(progressDiv);
-
-  cell.appendChild(progressContainer);
-
-  return cell;
-}
+            return cell;
+        }
 
 
-function createStatusCell(authorData) {
-  const cell = document.createElement('td');
-  cell.classList.add('align-middle', 'text-center', 'text-sm');
+        function createProgressCell(completionValue) {
+            completionValue = 100 //Placeholder #TODO
+            const cell = document.createElement('td');
+            cell.classList.add('align-middle', 'text-center');
 
-  const badge = document.createElement('span');
-  badge.classList.add('badge', 'badge-sm');
+            const progressContainer = document.createElement('div');
+            progressContainer.classList.add('d-flex', 'align-items-center', 'justify-content-center');
 
-  let badgeClass;
-  switch ("bem") { // original code: authorData.status.toLowerCase()
-    case 'bem': // Assuming "bem" translates to "good"
-      badgeClass = 'bg-gradient-success';
-      badge.textContent = 'Bom'; // Change to "Good" if preferred
-      break;
-    case 'razoavel': // Assuming "razoavel" translates to "fair"
-      badgeClass = 'bg-gradient-warning';
-      badge.textContent = 'Razoável'; // Change to "Fair" if preferred
-      break;
-    case 'ruim': // Assuming "ruim" translates to "bad"
-      badgeClass = 'bg-gradient-danger';
-      badge.textContent = 'Ruim'; // Change to "Bad" if preferred
-      break;
-    default:
-      badgeClass = 'bg-gradient-secondary'; // Default (gray)
-      badge.textContent = authorData.status;
-  }
+            const progressPercentage = document.createElement('span');
+            progressPercentage.classList.add('me-2', 'text-xs', 'font-weight-bold');
+            progressPercentage.textContent = `${completionValue}%`;
 
-  badge.classList.add(badgeClass);
-  cell.appendChild(badge);
+            const progressDiv = document.createElement('div');
 
-  return cell;
-}
+            const progressBar = document.createElement('div');
+            progressBar.classList.add('progress');
 
-function createCreatedDateCell(createdDate) {
-  const cell = document.createElement('td');
-  const cellText = document.createElement('span');
-  cellText.classList.add('text-xs', 'font-weight-bold', 'mb-0');
+            const progressBarValue = document.createElement('div');
 
-  const date = new Date(createdDate);
-  const formattedDate = date.toLocaleDateString('pt-br', { day: '2-digit', month: '2-digit', year: 'numeric' }); // Format as dd/mm/yyyy
+            // Set progress bar color based on completion value
+            let progressBarClass;
+            if (completionValue >= 80) {
+                progressBarClass = 'bg-gradient-success'; // Done (green)
+            } else if (completionValue > 50 && completionValue < 80) {
+                progressBarClass = 'bg-gradient-info'; // Working (blue)
+            } else {
+                progressBarClass = 'bg-gradient-danger'; // Canceled (red)
+            }
 
-  cellText.textContent = formattedDate;
+            progressBarValue.classList.add('progress-bar', progressBarClass);
+            progressBarValue.setAttribute('role', 'progressbar');
+            progressBarValue.setAttribute('aria-valuenow', completionValue);
+            progressBarValue.setAttribute('aria-valuemin', '0');
+            progressBarValue.setAttribute('aria-valuemax', '100');
+            progressBarValue.style.width = `${completionValue}%`;
 
-  cell.classList.add('align-middle', 'text-center');
-  cell.appendChild(cellText);
+            progressBar.appendChild(progressBarValue);
+            progressDiv.appendChild(progressBar);
 
-  return cell;
-}
+            progressContainer.appendChild(progressPercentage);
+            progressContainer.appendChild(progressDiv);
 
-function createUpdatedDateCell(updatedDate) {
-  const cell = document.createElement('td');
-  const cellText = document.createElement('span');
-  cellText.classList.add('text-xs', 'font-weight-bold', 'mb-0');
+            cell.appendChild(progressContainer);
 
-  const date = new Date(updatedDate);
-  const formattedDate = date.toLocaleDateString('pt-br', { day: '2-digit', month: '2-digit', year: 'numeric' }); // Format as dd/mm/yyyy
+            return cell;
+        }
 
-  cellText.textContent = formattedDate;
 
-  cell.classList.add('align-middle', 'text-center');
-  cell.appendChild(cellText);
+        function createStatusCell(authorData) {
+            const cell = document.createElement('td');
+            cell.classList.add('align-middle', 'text-center', 'text-sm');
 
-  return cell;
-}
+            const badge = document.createElement('span');
+            badge.classList.add('badge', 'badge-sm');
 
-function createViewDataCell(authorData) {
-    const cell = document.createElement('td');
-    const cellText = document.createElement('a');
-    cellText.classList.add('text-xs', 'font-weight-bold', 'mb-0');
+            let badgeClass;
+            switch ("bem") { // original code: authorData.status.toLowerCase()
+                case 'bem': // Assuming "bem" translates to "good"
+                    badgeClass = 'bg-gradient-success';
+                    badge.textContent = 'Bom'; // Change to "Good" if preferred
+                    break;
+                case 'razoavel': // Assuming "razoavel" translates to "fair"
+                    badgeClass = 'bg-gradient-warning';
+                    badge.textContent = 'Razoável'; // Change to "Fair" if preferred
+                    break;
+                case 'ruim': // Assuming "ruim" translates to "bad"
+                    badgeClass = 'bg-gradient-danger';
+                    badge.textContent = 'Ruim'; // Change to "Bad" if preferred
+                    break;
+                default:
+                    badgeClass = 'bg-gradient-secondary'; // Default (gray)
+                    badge.textContent = authorData.status;
+            }
 
-    cellText.setAttribute('data-toggle', 'tooltip');
-    cellText.setAttribute('data-original-title', 'Visualizar questionarios do paciente');
-    cellText.textContent = 'Visualizar';
-    cellText.href = `/pacientes/${authorData.id}`;
+            badge.classList.add(badgeClass);
+            cell.appendChild(badge);
 
-    cell.classList.add('align-middle', 'text-center');
-    cell.appendChild(cellText);
+            return cell;
+        }
 
-    return cell;
-}
+        function createCreatedDateCell(createdDate) {
+            const cell = document.createElement('td');
+            const cellText = document.createElement('span');
+            cellText.classList.add('text-xs', 'font-weight-bold', 'mb-0');
 
-// Call the function to populate the table
-populateTable();
-</script>
+            const date = new Date(createdDate);
+            const formattedDate = date.toLocaleDateString('pt-br', {day: '2-digit', month: '2-digit', year: 'numeric'}); // Format as dd/mm/yyyy
+
+            cellText.textContent = formattedDate;
+
+            cell.classList.add('align-middle', 'text-center');
+            cell.appendChild(cellText);
+
+            return cell;
+        }
+
+        function createUpdatedDateCell(updatedDate) {
+            const cell = document.createElement('td');
+            const cellText = document.createElement('span');
+            cellText.classList.add('text-xs', 'font-weight-bold', 'mb-0');
+
+            const date = new Date(updatedDate);
+            const formattedDate = date.toLocaleDateString('pt-br', {day: '2-digit', month: '2-digit', year: 'numeric'}); // Format as dd/mm/yyyy
+
+            cellText.textContent = formattedDate;
+
+            cell.classList.add('align-middle', 'text-center');
+            cell.appendChild(cellText);
+
+            return cell;
+        }
+
+        function createViewDataCell(authorData) {
+            const cell = document.createElement('td');
+            const cellText = document.createElement('a');
+            cellText.classList.add('text-xs', 'font-weight-bold', 'mb-0');
+
+            cellText.setAttribute('data-toggle', 'tooltip');
+            cellText.setAttribute('data-original-title', 'Visualizar questionarios do paciente');
+            cellText.textContent = 'Visualizar';
+            cellText.href = `/pacientes/${authorData.id}`;
+
+            cell.classList.add('align-middle', 'text-center');
+            cell.appendChild(cellText);
+
+            return cell;
+        }
+
+        // Function to handle search input change
+        document.getElementById('searchInput').addEventListener('input', function (event) {
+            const searchQuery = event.target.value;
+            populateTable(searchQuery);
+        });
+
+        // Call the function to populate the table
+        populateTable();
+    </script>
 {% endblock javascripts %}
