@@ -152,9 +152,10 @@ def get_paciente(paciente_id):
     if not paciente:
         # Handle the case where the paciente is not found
         return "Paciente not found", 404
+    recent_results = {'nome': 'DASS-21', 'data': '28-03-24'}
     paciente = paciente.to_dict_paciente() # Ajust hour
     # Pass the paciente data to the template for rendering
-    return render_template('home/paciente.html', paciente=paciente)
+    return render_template('home/paciente.html', paciente=paciente, recent_results=recent_results)
 
 
 @bp.route('/admin/logout')
