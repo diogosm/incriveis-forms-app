@@ -21,11 +21,11 @@ class Paciente(db.Model):
             'email': self.email
         }
 
-    def to_dict(self):
+    def to_dict_paciente(self):
         return {
             'id': self.id,
             'nome': self.nome,
-            'date_created': self.date_created.strftime('%Y-%m-%d %H:%M:%S'),
-            'date_updated': self.date_updated.strftime('%Y-%m-%d %H:%M:%S'),
+            'date_created': self.date_created.strftime('%d-%m-%Y'),
+            'date_updated': self.date_updated.strftime('%d-%m-%Y'),
             'email': self.email
         }

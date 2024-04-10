@@ -145,14 +145,16 @@ def get_questionario(id):
                            id=id)
 
 
-@bp.route('/pacientes/<int:id>', methods=['GET'])
+@bp.route('/pacientes/<int:paciente_id>', methods=['GET'])
 # @login_required
-def get_paciente(id):
-    # questionarioService.drop_questionario_first()
-    # questionarioService.cria_questionario_dass()
-
-    return render_template('home/paciente.html',
-                           id=id)
+def get_paciente(paciente_id):
+    paciente = pacienteService.get_pacient_by_id(paciente_id)
+    if not paciente:
+        # Handle the case where the paciente is not found
+        return "Paciente not found", 404
+    paciente = paciente.to_dict_paciente() # Ajust hour
+    # Pass the paciente data to the template for rendering
+    return render_template('home/paciente.html', paciente=paciente)
 
 
 @bp.route('/admin/logout')
