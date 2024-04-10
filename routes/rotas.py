@@ -1,5 +1,5 @@
 import bcrypt
-from flask import Blueprint, request, jsonify, redirect, url_for, session, render_template
+from flask import Blueprint, request, jsonify, redirect, url_for, session, render_template, flash, abort, session
 from flask_login import LoginManager, login_user, UserMixin, login_required, logout_user, current_user
 
 import database
@@ -104,21 +104,33 @@ def login():
 
 
 @bp.route('/admin/cadastro', methods=['GET', 'POST'])
+@login_required
 def criar_usuario():
     formCriarUsuario = RegisterForm()
-    print(formCriarUsuario.is_submitted(),flush=True)
-    print(formCriarUsuario.validate_on_submit(None), flush=True)
     if formCriarUsuario.validate_on_submit():
-        # senha = bcrpyt.generate_password_hash(formCriarUsuario.senha.data)
-        usuario = Usuarios()
-        usuario.nome = formCriarUsuario.nome.data
-        usuario.senha = formCriarUsuario.senha.data
-        usuario.login = formCriarUsuario.login.data
-        print("QUALQUWR COISA", flush=True)
-        db.session.add(usuario)
-        db.session.commit()
-        print('User criado com sucesso', flush=True)
+        login_existente = Usuarios.query.filter_by(login=formCriarUsuario.login.data).first()
+
+        if formCriarUsuario.senha.data == formCriarUsuario.confirmacao_senha.data and not login_existente:
+            try:
+                usuario = Usuarios()
+                usuario.nome = formCriarUsuario.nome.data
+                usuario.senha = formCriarUsuario.senha.data
+                usuario.login = formCriarUsuario.login.data
+                db.session.add(usuario)
+                db.session.commit()
+                print('Usuário criado com sucesso', flush=True)
+            except Exception as e:
+                print(f"Erro ao criar usuário: {str(e)}", flush=True)
+                formCriarUsuario.login.errors.append("Usuário ja existente")
+                db.session.rollback()
+                flash('Ocorreu um erro ao criar o usuário. Por favor, tente novamente.', 'error')
+        elif login_existente:
+            flash('O login já está em uso. Por favor, escolha outro.', 'error')
+        else:
+            formCriarUsuario.confirmacao_senha.errors.append('As senhas não coincidem')
+
     return render_template('home/cadastro_usuario.html', form=formCriarUsuario)
+
 
 
 @bp.route('/admin/questionario/<int:id>', methods=['GET'])
@@ -154,34 +166,6 @@ def logout():
 @bp.route('/admin/login2')
 def route_default():
     return redirect(url_for('login'))
-
-
-# @bp.route('/admin/cadastro', methods=["GET", "POST"])
-# def cadastrar_usuario():
-#     formCriarConta = RegisterForm()
-#     # só vai rodar caso o usuario submeter, fazer o login
-#     if formCriarConta.validate_on_submit():
-#         # faz a criptografia em hash para o usuario não tem acesso a essa informação
-#         senha = bcrpyt.generate_password_hash(formCriarConta.password.data)
-#         # bcrpyt.check_password_hash() -> checa a criptografia -> Retornar uma criptografia -> SEGURANÇA
-#         usuario = Usuarios()
-#
-#         usuario.login = formCriarConta.username.data
-#         usuario.senha = senha
-#         '''
-#         usuario = Usuarios(
-#             login=formCriarConta.username.data,
-#             senha=senha
-#         )
-#         '''
-#         # adiciona no banco de dados
-#         db.session.add(usuario)
-#         db.session.commit()
-#
-#         # fazer login do usuario
-#         login_user(usuario, remember=True)
-#         return redirect(url_for("rotas.index2"))
-#     return render_template("accounts/.html", form=formCriarConta)
 
 
 @bp.route('/pacientes', methods=['GET', 'POST'])
